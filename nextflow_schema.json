@@ -1,0 +1,119 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/sjoclaudi/ttf-emu/main/nextflow_schema.json",
+    "title": "ttf-emu pipeline parameters",
+    "description": "Full-Length 16S Profiling (Emu) for TreeTopFlow. Research use only. Not for clinical or diagnostic use.",
+    "type": "object",
+    "$defs": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output files.",
+            "required": ["input", "outdir"],
+            "properties": {
+                "input": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "schema": "assets/schema_input.json",
+                    "description": "Path to comma-separated samplesheet with columns sample,fastq_1. Optional fastq_2 is accepted for schema uniformity and ignored (single-end ONT / PacBio HiFi 16S).",
+                    "help_text": "The samplesheet must have a header row. Each row is one long-read 16S sample. fastq_2 may be present and empty.",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "The output directory where results will be saved. You can use an S3 path with the awsbatch profile.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "metadata": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/tab-separated-values",
+                    "default": null,
+                    "description": "Optional sample metadata TSV. The first column must be ID or sample and match samplesheet sample IDs. Used as phyloseq sample_data and published as sample_metadata.tsv.",
+                    "help_text": "Leave unset to build phyloseq without sample metadata.",
+                    "fa_icon": "fas fa-table"
+                }
+            }
+        },
+        "reference_options": {
+            "title": "Reference databases",
+            "type": "object",
+            "fa_icon": "fas fa-database",
+            "description": "Emu 16S database. Default is the unpacked S3 prefix mirrored at refdb.treetopunder.com.",
+            "properties": {
+                "emu_db": {
+                    "type": "string",
+                    "format": "path",
+                    "default": "s3://codonyat/refdb/public/emu/default",
+                    "description": "Emu database directory or .tar/.tar.gz archive. Default is the unpacked default 16S prefix (species_taxid.fasta, taxonomy.tsv). HTTPS mirror: https://refdb.treetopunder.com/emu/default/",
+                    "help_text": "Pass an unpacked directory (local, s3://, with or without a trailing slash) or a tar/tar.gz archive unpacked with nf-core/untar. Unpacked directories skip UNTAR.",
+                    "fa_icon": "fas fa-database"
+                }
+            }
+        },
+        "analysis_options": {
+            "title": "Analysis options",
+            "type": "object",
+            "fa_icon": "fas fa-sliders-h",
+            "description": "Read filtering, Emu abundance cutoff, and optional reports.",
+            "properties": {
+                "skip_chopper": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Chopper length/quality filtering and send raw reads directly to Emu.",
+                    "fa_icon": "fas fa-forward"
+                },
+                "min_length": {
+                    "type": "integer",
+                    "default": 1000,
+                    "minimum": 1,
+                    "description": "Chopper --minlength. Default 1000 bp (full-length 16S, R9/R10 ONT).",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "max_length": {
+                    "type": "integer",
+                    "default": 1800,
+                    "minimum": 1,
+                    "description": "Chopper --maxlength. Default 1800 bp.",
+                    "fa_icon": "fas fa-ruler-horizontal"
+                },
+                "min_quality": {
+                    "type": "integer",
+                    "default": 10,
+                    "minimum": 0,
+                    "description": "Chopper --quality minimum average read quality. Default 10.",
+                    "fa_icon": "fas fa-signal"
+                },
+                "emu_min_abundance": {
+                    "type": "number",
+                    "default": 0.0001,
+                    "minimum": 0,
+                    "description": "Emu abundance --min-abundance cutoff.",
+                    "fa_icon": "fas fa-filter"
+                },
+                "skip_krona": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip Krona chart generation.",
+                    "fa_icon": "fas fa-ban"
+                },
+                "skip_phyloseq": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip phyloseq RDS generation.",
+                    "fa_icon": "fas fa-ban"
+                }
+            }
+        }
+    },
+    "allOf": [
+        { "$ref": "#/$defs/input_output_options" },
+        { "$ref": "#/$defs/reference_options" },
+        { "$ref": "#/$defs/analysis_options" }
+    ]
+}

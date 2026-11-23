@@ -1,0 +1,4 @@
+tax_id	abundance	estimated counts	superkingdom	phylum	class	order	family	genus	species
+562	0.5	100.4	Bacteria	Proteobacteria	Gammaproteobacteria	Enterobacterales	Enterobacteriaceae	Escherichia	Escherichia coli
+817	0.4	80.1	Bacteria	Bacteroidetes	Bacteroidia	Bacteroidales	Bacteroidaceae	Bacteroides	Bacteroides fragilis
+unmapped	0.1	20					
