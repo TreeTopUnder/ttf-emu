@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "chopper 0.9.0"
+exit 0

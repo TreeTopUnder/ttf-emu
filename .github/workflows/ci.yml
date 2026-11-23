@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  scripts:
+    name: Script unit tests and schema validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install jsonschema
+      - name: Run helper-script tests
+        run: python tests/test_scripts.py
+
+  stub-run:
+    name: Nextflow stub-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: nf-core/setup-nextflow@v2
+        with:
+          version: "24.10.4"
+      - name: AWS Batch config must not require aws_queue and must disable docker
+        run: |
+          nextflow config -profile awsbatch > awsbatch.cfg
+          grep -q "s3://codonyat/refdb/public/emu/default" awsbatch.cfg
+          grep -A2 '^docker {' awsbatch.cfg | grep -q 'enabled = false'
+          ! grep -q "process.queue" awsbatch.cfg
+          ! grep -q "aws_queue is required" awsbatch.cfg
+          ! grep -q "Missing required parameter --aws_queue" awsbatch.cfg
+      - name: Stub-run with Chopper
+        run: nextflow run . -profile test -stub-run --outdir results_chopper
+      - name: Stub-run skipping Chopper
+        run: nextflow run . -profile test -stub-run --skip_chopper true --outdir results_nochopper
+      - name: Confirm expected stub outputs
+        run: |
+          test -f results_chopper/pipeline_info/software_versions.yml
+          test -f results_chopper/qc/nanoplot/sample1/NanoStats.txt
+          test -f results_chopper/qc/nanoplot/sample1/NanoPlot-report.html
+          test -f results_chopper/emu/sample1_rel-abundance.tsv
+          test -f results_chopper/emu/sample2_rel-abundance.tsv
+          test -f results_chopper/emu/emu-combined-abundance-species.tsv
+          test -f results_chopper/emu/emu-combined-abundance-species-counts.tsv
+          test -f results_chopper/emu/emu-combined-abundance-genus.tsv
+          test -f results_chopper/phyloseq/emu_phyloseq.rds
+          test -f results_chopper/sample_metadata.tsv
+          test -f results_chopper/krona/sample1.krona.html
+          test -f results_chopper/krona/krona_combined.html
+          test -f results_chopper/multiqc/multiqc_report.html
+          test -d results_chopper/multiqc/multiqc_data
+          test -f results_nochopper/emu/sample1_rel-abundance.tsv
+          test -f results_nochopper/phyloseq/emu_phyloseq.rds
+          test -f results_nochopper/pipeline_info/software_versions.yml
+          test -f results_nochopper/sample_metadata.tsv
