@@ -81,6 +81,10 @@ def createFastqChannel(LinkedHashMap row) {
 }
 
 workflow {
+    workflow.onComplete = {
+        log.info(workflow.success ? "ttf-emu completed successfully (research use only)" : "ttf-emu failed")
+    }
+
     if (params.help) {
         helpMessage()
         exit 0
@@ -113,8 +117,4 @@ workflow {
         ch_emu_db_archive,
         ch_emu_db_dir
     )
-}
-
-workflow.onComplete {
-    log.info(workflow.success ? "ttf-emu completed successfully (research use only)" : "ttf-emu failed")
 }
