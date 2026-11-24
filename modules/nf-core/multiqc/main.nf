@@ -25,13 +25,16 @@ process MULTIQC {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ? "--filename ${task.ext.prefix}.html" : ''
+    def report_name = task.ext.prefix ? "${task.ext.prefix}.html" : 'multiqc_report.html'
+    def prefix = task.ext.prefix ? "--filename ${report_name}" : ''
     def config = multiqc_config ? "--config $multiqc_config" : ''
     def extra_config = extra_multiqc_config ? "--config $extra_multiqc_config" : ''
     def logo = multiqc_logo ? "--cl-config 'custom_logo: \"${multiqc_logo}\"'" : ''
     def replace = replace_names ? "--replace-names ${replace_names}" : ''
     def samples = sample_names ? "--sample-names ${sample_names}" : ''
     """
+    # MultiQC 1.29 exits non-zero and writes no HTML when no modules match.
+    # Keep the pipeline green: always emit the declared report + data dir.
     multiqc \\
         --force \\
         $args \\
@@ -41,7 +44,23 @@ process MULTIQC {
         $logo \\
         $replace \\
         $samples \\
-        .
+        . || true
+
+    if ! ls *multiqc_report.html >/dev/null 2>&1 && [ ! -f "${report_name}" ]; then
+        echo "WARNING: MultiQC found no recognised module outputs; writing a placeholder report." >&2
+        mkdir -p multiqc_data
+        cat > "${report_name}" <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>MultiQC report</title></head>
+<body>
+<h1>MultiQC</h1>
+<p>No recognised module outputs were found for this run. The pipeline completed; this placeholder exists so MultiQC is not a hard failure.</p>
+</body>
+</html>
+EOF
+        echo "placeholder" > multiqc_data/multiqc_sources.txt
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

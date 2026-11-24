@@ -45,6 +45,10 @@ jobs:
           test -f results_chopper/pipeline_info/software_versions.yml
           test -f results_chopper/qc/nanoplot/sample1/NanoStats.txt
           test -f results_chopper/qc/nanoplot/sample1/NanoPlot-report.html
+          test -f results_chopper/qc/chopper/sample1/sample1.chopper.log
+          grep -q -- "--minlength 1200" results_chopper/qc/chopper/sample1/sample1.chopper.log
+          grep -q -- "--maxlength 1800" results_chopper/qc/chopper/sample1/sample1.chopper.log
+          grep -q -- "--quality 10" results_chopper/qc/chopper/sample1/sample1.chopper.log
           test -f results_chopper/emu/sample1_rel-abundance.tsv
           test -f results_chopper/emu/sample2_rel-abundance.tsv
           test -f results_chopper/emu/emu-combined-abundance-species.tsv

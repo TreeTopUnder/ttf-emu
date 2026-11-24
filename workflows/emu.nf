@@ -28,12 +28,22 @@ workflow TTF_EMU {
 
     NANOPLOT(ch_input)
     ch_versions      = ch_versions.mix(NANOPLOT.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(NANOPLOT.out.txt.collect { it[1] })
+    ch_multiqc_files = ch_multiqc_files.mix(
+        NANOPLOT.out.txt
+            .map { _meta, files -> files }
+            .flatten()
+            .filter { f -> f.name.contains('NanoStats') }
+    )
 
     if (!params.skip_chopper) {
         CHOPPER(ch_input, [])
-        ch_versions = ch_versions.mix(CHOPPER.out.versions)
-        ch_reads    = CHOPPER.out.fastq
+        ch_versions      = ch_versions.mix(CHOPPER.out.versions)
+        ch_reads         = CHOPPER.out.fastq
+        // MultiQC 1.29 has no Chopper module (pychopper/porechop are different tools).
+        // Still stage the logs so they are in the MultiQC work dir for inspection.
+        ch_multiqc_files = ch_multiqc_files.mix(
+            CHOPPER.out.log.map { _meta, log -> log }
+        )
     } else {
         ch_reads = ch_input
     }

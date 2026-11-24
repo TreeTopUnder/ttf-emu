@@ -13,6 +13,7 @@ process CHOPPER {
 
     output:
     tuple val(meta), path("*.fastq.gz") , emit: fastq
+    tuple val(meta), path("*.log")      , emit: log
     path "versions.yml"                 , emit: versions
 
     when:
@@ -27,13 +28,15 @@ process CHOPPER {
 
     if ("$fastq" == "${prefix}.fastq.gz") error "Input and output names are the same, set prefix in module configuration to disambiguate!"
     """
+    echo "Chopper args: --threads ${task.cpus} ${fasta_filtering} ${args2}" > ${prefix}.log
     zcat \\
         $args \\
         $fastq | \\
     chopper \\
         --threads $task.cpus \\
         $fasta_filtering \\
-        $args2 | \\
+        $args2 \\
+        2>> ${prefix}.log | \\
     gzip \\
         $args3 > ${prefix}.fastq.gz
 
@@ -44,9 +47,12 @@ process CHOPPER {
     """
 
     stub:
+    def args2  = task.ext.args2  ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo | gzip > ${prefix}.fastq.gz
+    echo "Chopper args: --threads ${task.cpus} ${args2}" > ${prefix}.log
+    echo "Kept 0 reads out of 0 reads (stub)" >> ${prefix}.log
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

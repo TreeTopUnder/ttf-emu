@@ -57,6 +57,17 @@ output:
           description: Filtered and trimmed FastQ file
           pattern: "*.{fastq.gz}"
           ontologies: []
+  log:
+    - - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'test', single_end:false ]
+      - "*.log":
+          type: file
+          description: Chopper stderr log including the filter args and kept/input read counts
+          pattern: "*.log"
+          ontologies: []
   versions:
     - versions.yml:
         type: file

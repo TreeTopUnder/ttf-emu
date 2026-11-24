@@ -4,7 +4,7 @@ Full-Length 16S Profiling (Emu) — a lean Nextflow DSL2 pipeline for TreeTopFlo
 
 **Research use only. Not for clinical or diagnostic use.**
 
-Version `0.1.0` profiles full-length ONT / PacBio HiFi 16S reads with Emu only: NanoPlot QC, optional Chopper length/quality filtering, Emu abundance, combined tables, optional phyloseq RDS (ampliseq v2.0.0 notebook-compatible) and Krona plots, and MultiQC.
+Version `0.1.1` profiles full-length ONT / PacBio HiFi 16S reads with Emu only: NanoPlot QC, optional Chopper length/quality filtering, Emu abundance, combined tables, optional phyloseq RDS (ampliseq v2.0.0 notebook-compatible) and Krona plots, and MultiQC.
 
 ## Inputs
 
@@ -37,12 +37,18 @@ SAMPLE_HIFI	treatment	1
 | `--metadata` | `null` | Optional sample metadata TSV |
 | `--emu_db` | `s3://codonyat/refdb/public/emu/default` | Unpacked Emu default 16S directory (or `.tar`/`.tar.gz`). HTTPS: `https://refdb.treetopunder.com/emu/default/` |
 | `--skip_chopper` | `false` | Skip Chopper length/quality filtering |
-| `--min_length` | `1000` | Chopper `--minlength` |
-| `--max_length` | `1800` | Chopper `--maxlength` |
-| `--min_quality` | `10` | Chopper `--quality` |
+| `--min_length` | `1200` | Chopper `--minlength` (full-length 16S) |
+| `--max_length` | `1800` | Chopper `--maxlength` (full-length 16S) |
+| `--min_quality` | `10` | Chopper `--quality` (`-q`) |
 | `--emu_min_abundance` | `0.0001` | Emu `--min-abundance` |
+| `--emu_max_secondary` | `50` | Emu `--N` (max minimap2 secondary alignments per read). Lower values (e.g. 20) are faster and use less RAM; 50 is Emu's accuracy/cost default. High-diversity samples such as Zymo mocks are slowest at `--N 50`. |
+| `--emu_keep_read_assignments` | `false` | Emu `--keep-read-assignments`. Writes a large per-read likelihood TSV and adds runtime. Phyloseq/Krona use `*_rel-abundance.tsv` (`--keep-counts`) and do not need it. |
 | `--skip_krona` | `false` | Skip Krona plots |
 | `--skip_phyloseq` | `false` | Skip phyloseq RDS |
+
+Chopper is wired through `ext.args2` as `--minlength`, `--maxlength`, and `--quality`. Defaults target full-length 16S (~1500 bp): **Q10, 1200–1800 bp**. A 1000 bp minimum often keeps 100% of already size-selected ONT 16S libraries; 1200 bp drops short fragments. Filter stats are written to `qc/chopper/<sample>/*.log` (`Kept N reads out of M reads`).
+
+`EMU_ABUNDANCE` uses `label: process_high` (**16 CPUs / 32 GB / 12 h**, capped by `--max_cpus` / `--max_memory`) and passes `--threads ${task.cpus}` (not a hardcoded thread count).
 
 `--emu_db` may be an unpacked directory (local or `s3://`, trailing slash optional) or a `.tar` / `.tar.gz` archive (unpacked with `nf-core/untar`). Unpacked directories skip `UNTAR` and are staged as directory channels so Emu sees `species_taxid.fasta` and `taxonomy.tsv`.
 
@@ -52,6 +58,7 @@ SAMPLE_HIFI	treatment	1
 outdir/
   qc/nanoplot/<sample>/*.txt
   qc/nanoplot/<sample>/*.html
+  qc/chopper/<sample>/*.log
   emu/*_rel-abundance.tsv
   emu/emu-combined-abundance-species.tsv
   emu/emu-combined-abundance-species-counts.tsv
