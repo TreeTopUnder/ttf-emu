@@ -19,13 +19,15 @@ def helpMessage() {
 
         Optional:
           --metadata          Sample metadata TSV (first column ID or sample)
-          --skip_chopper      Skip Chopper length/quality filtering (default: false)
-          --min_length        Chopper minimum read length (default: 1000)
-          --max_length        Chopper maximum read length (default: 1800)
-          --min_quality       Chopper minimum average quality (default: 10)
-          --emu_min_abundance Emu --min-abundance (default: 0.0001)
-          --skip_krona        Skip Krona plots (default: false)
-          --skip_phyloseq     Skip phyloseq RDS (default: false)
+          --skip_chopper               Skip Chopper length/quality filtering (default: false)
+          --min_length                 Chopper --minlength (default: 1200, full-length 16S)
+          --max_length                 Chopper --maxlength (default: 1800)
+          --min_quality                Chopper --quality (default: 10)
+          --emu_min_abundance          Emu --min-abundance (default: 0.0001)
+          --emu_max_secondary          Emu --N max secondary alignments (default: 50)
+          --emu_keep_read_assignments  Emu --keep-read-assignments (default: false)
+          --skip_krona                 Skip Krona plots (default: false)
+          --skip_phyloseq              Skip phyloseq RDS (default: false)
         """.stripIndent()
     )
 }

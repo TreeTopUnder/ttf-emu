@@ -70,23 +70,26 @@
                 },
                 "min_length": {
                     "type": "integer",
-                    "default": 1000,
+                    "default": 1200,
                     "minimum": 1,
-                    "description": "Chopper --minlength. Default 1000 bp (full-length 16S, R9/R10 ONT).",
+                    "description": "Chopper --minlength in bp. Default 1200 for full-length 16S (ONT R10.4.1 / PacBio HiFi).",
+                    "help_text": "Passed as chopper --minlength. Combined with --maxlength 1800 and --quality 10 this drops short fragments and adapter-only reads that a 1000 bp floor often keeps on already size-selected 16S libraries.",
                     "fa_icon": "fas fa-ruler-horizontal"
                 },
                 "max_length": {
                     "type": "integer",
                     "default": 1800,
                     "minimum": 1,
-                    "description": "Chopper --maxlength. Default 1800 bp.",
+                    "description": "Chopper --maxlength in bp. Default 1800 for full-length 16S.",
+                    "help_text": "Passed as chopper --maxlength. Typical bacterial 16S is ~1500 bp; 1800 bp drops chimeras and concatenated reads.",
                     "fa_icon": "fas fa-ruler-horizontal"
                 },
                 "min_quality": {
                     "type": "integer",
                     "default": 10,
                     "minimum": 0,
-                    "description": "Chopper --quality minimum average read quality. Default 10.",
+                    "description": "Chopper --quality minimum average read quality (Phred). Default 10.",
+                    "help_text": "Passed as chopper --quality (equivalent to -q). Raise to 12–15 for higher-accuracy ONT Q20+ / R10.4.1 simplex if you can spare reads.",
                     "fa_icon": "fas fa-signal"
                 },
                 "emu_min_abundance": {
@@ -95,6 +98,21 @@
                     "minimum": 0,
                     "description": "Emu abundance --min-abundance cutoff.",
                     "fa_icon": "fas fa-filter"
+                },
+                "emu_max_secondary": {
+                    "type": "integer",
+                    "default": 50,
+                    "minimum": 1,
+                    "description": "Emu --N: max minimap2 secondary alignments per read (Emu default 50).",
+                    "help_text": "Lower values (e.g. 20) reduce minimap2 time and memory and speed up Emu's EM step, at the cost of less alignment evidence for abundance re-estimation. Emu's authors chose 50 as the accuracy/cost default. High-diversity samples (e.g. Zymo mock) are the slowest at --N 50.",
+                    "fa_icon": "fas fa-layer-group"
+                },
+                "emu_keep_read_assignments": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Pass Emu --keep-read-assignments (large per-read likelihood TSV). Default false.",
+                    "help_text": "Writes *_read-assignment-distributions.tsv (one row per read, one column per taxid). This file is large and slow to write; phyloseq and Krona use *_rel-abundance.tsv from --keep-counts and do not need it. Enable only when you need per-read assignment probabilities.",
+                    "fa_icon": "fas fa-list"
                 },
                 "skip_krona": {
                     "type": "boolean",

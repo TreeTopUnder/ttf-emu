@@ -9,9 +9,32 @@ report_section_order:
 export_plots: true
 disable_version_detection: false
 extra_fn_clean_exts:
+  - type: regex
+    pattern: '_NanoStats$'
+  - NanoStats
   - .chopper
   - _rel-abundance
-  - NanoStats
+# MultiQC 1.29 has no module named `nanoplot`. NanoPlot NanoStats.txt is parsed by `nanostat`
+# (see MultiQC v1.29 modules/nanostat and search_patterns.yaml). There is no Chopper module;
+# pychopper and porechop are different tools.
 run_modules:
-  - nanoplot
+  - nanostat
   - custom_content
+sp:
+  nanostat:
+    fn: "*NanoStats.txt"
+general_stats_columns:
+  nanostat:
+    columns:
+      Number of reads_fastq:
+        title: "# Reads"
+        hidden: false
+      Mean read length_fastq:
+        title: "Mean Length"
+        hidden: false
+      Median read quality_fastq:
+        title: "Median Quality"
+        hidden: false
+      Read length N50_fastq:
+        title: "Read N50"
+        hidden: false

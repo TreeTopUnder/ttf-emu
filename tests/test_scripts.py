@@ -232,14 +232,18 @@ class SchemaTests(unittest.TestCase):
             "max_length",
             "min_quality",
             "emu_min_abundance",
+            "emu_max_secondary",
+            "emu_keep_read_assignments",
             "skip_krona",
             "skip_phyloseq",
         ]:
             self.assertIn(key, props)
-        self.assertEqual(props["min_length"]["default"], 1000)
+        self.assertEqual(props["min_length"]["default"], 1200)
         self.assertEqual(props["max_length"]["default"], 1800)
         self.assertEqual(props["min_quality"]["default"], 10)
         self.assertEqual(props["emu_min_abundance"]["default"], 0.0001)
+        self.assertEqual(props["emu_max_secondary"]["default"], 50)
+        self.assertFalse(props["emu_keep_read_assignments"]["default"])
         self.assertFalse(props["skip_chopper"]["default"])
         self.assertEqual(props["emu_db"]["default"], "s3://codonyat/refdb/public/emu/default")
         self.assertIn("refdb.treetopunder.com/emu/default", props["emu_db"]["description"])
@@ -250,9 +254,44 @@ class SchemaTests(unittest.TestCase):
         config = (ROOT / "nextflow.config").read_text()
         self.assertIn("s3://codonyat/refdb/public/emu/default", config)
         self.assertIn("refdb.treetopunder.com/emu/default", config)
+        self.assertIn("min_length                 = 1200", config)
+        self.assertIn("emu_max_secondary          = 50", config)
+        self.assertIn("emu_keep_read_assignments  = false", config)
+        self.assertIn("version         = '0.1.1'", config)
         test_config = (ROOT / "conf" / "test.config").read_text()
         self.assertIn("tests/fixtures/emu_db", test_config)
         self.assertNotIn("s3://codonyat", test_config)
+
+    def test_multiqc_config_uses_nanostat_not_nanoplot(self) -> None:
+        text = (ROOT / "assets" / "multiqc_config.yml").read_text()
+        self.assertIn("- nanostat", text)
+        self.assertNotIn("- nanoplot", text)
+        self.assertIn('fn: "*NanoStats.txt"', text)
+
+    def test_emu_and_chopper_module_wiring(self) -> None:
+        emu_module = (ROOT / "modules" / "nf-core" / "emu" / "abundance" / "main.nf").read_text()
+        self.assertIn("--threads ${task.cpus}", emu_module)
+        self.assertNotRegex(emu_module, r"--threads\s+\d+")
+        self.assertIn("label 'process_high'", emu_module)
+
+        modules_config = (ROOT / "conf" / "modules.config").read_text()
+        chopper_block = modules_config.split("withName: CHOPPER")[1].split("withName:")[0]
+        self.assertIn("--minlength ${params.min_length}", chopper_block)
+        self.assertIn("--maxlength ${params.max_length}", chopper_block)
+        self.assertIn("--quality ${params.min_quality}", chopper_block)
+
+        emu_block = modules_config.split("withName: EMU_ABUNDANCE")[1].split("withName:")[0]
+        self.assertIn("--N ${params.emu_max_secondary}", emu_block)
+        self.assertIn("params.emu_keep_read_assignments", emu_block)
+        self.assertNotRegex(emu_block, r"(?m)^\s*cpus\s*=")
+        self.assertNotRegex(emu_block, r"(?m)^\s*memory\s*=")
+
+        base_config = (ROOT / "conf" / "base.config").read_text()
+        self.assertIn("withLabel: process_high", base_config)
+        self.assertIn("32.GB", base_config)
+        self.assertNotIn("withName: EMU_ABUNDANCE", base_config)
+        aws_config = (ROOT / "conf" / "awsbatch.config").read_text()
+        self.assertNotIn("withName: EMU_ABUNDANCE", aws_config)
 
 
 if __name__ == "__main__":
